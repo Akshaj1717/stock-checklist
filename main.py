@@ -7,14 +7,14 @@ TESTS = {
     "Above 200-day average": above_200_day_average,
 }
 
-symbol = ["VOO", "QQQ", "AAPL"]
-for s in symbol:
+symbols = ["VOO", "QQQ", "AAPL"]
+icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
+for s in symbols:
     ticker = yf.Ticker(s)
     info = ticker.info
     hist = ticker.history(period="1y")
 
-
-icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
-for name, test in TESTS.items():
-    status, detail = test(info, hist)
-    print(f"{icons[status]} {name}: {detail}")
+    print(f"\n{s}")
+    for name, test in TESTS.items():
+        status, detail = test(info, hist)
+        print(f"{icons[status]} {name}: {detail}")

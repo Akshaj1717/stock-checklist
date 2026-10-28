@@ -23,7 +23,7 @@ def positive_1y_return(info, hist):
 def above_200_day_average(info, hist):
     """Pass if the price is above the 200-day moving average."""
     if hist is None or len(hist) < 200:
-            return "n/a", "Not enough price history"
+        return "n/a", "Not enough price history"
 
     avg_200 = hist["Close"].tail(200).mean()
     price = hist["Close"].iloc[-1]
