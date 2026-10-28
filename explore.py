@@ -12,3 +12,4 @@ print("Profit margin:", info.get("profitMargins"))
 
 print(hist.tail())               # last 5 days of prices
 print("Latest close:", hist["Close"].iloc[-1])
+print(info.keys())
