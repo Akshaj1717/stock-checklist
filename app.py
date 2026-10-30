@@ -30,17 +30,16 @@ if symbol:
         status, detail = test(info, hist)
         results.append((name, status, detail))
 
-    
-scored = [status for name, status, detail in results if status != "n/a"]
-passed = scored.count("pass")
+    scored = [status for name, status, detail in results if status != "n/a"]
+    passed = scored.count("pass")
 
-st.subheader(f"Checklist: {passed}/{len(scored)} passed")
-if scored:
-    st.progress(passed / len(scored))
+    st.subheader(f"Checklist: {passed}/{len(scored)} passed")
+    if scored:
+        st.progress(passed / len(scored))
 
-icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
-for name, status, detail in results:
-    st.write(f"{icons[status]} **{name}**: {detail}")
+    icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
+    for name, status, detail in results:
+        st.write(f"{icons[status]} **{name}**: {detail}")   
 
 c1, c2 ,c3 = st.columns(3)
 c1.metric("Price", f"${hist['Close'].iloc[-1]:.2f}")
