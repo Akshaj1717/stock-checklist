@@ -34,14 +34,15 @@ if symbol:
     passed = scored.count("pass")
 
     st.subheader(f"Checklist: {passed}/{len(scored)} passed")
+    c1, c2 ,c3 = st.columns(3)
+    c1.metric("Price", f"${hist['Close'].iloc[-1]:.2f}")
+    c2.metric("52-week high", f"${hist['Close'].tail(252).max():.2f}")
+    c3.metric("52-week low", f"${hist['Close'].tail(252).min():.2f}")
     if scored:
         st.progress(passed / len(scored))
 
     icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
     for name, status, detail in results:
-        st.write(f"{icons[status]} **{name}**: {detail}")   
+        st.write(f"{icons[status]} **{name}**: {detail.replace('$', '\\$')}")  
 
-    c1, c2 ,c3 = st.columns(3)
-    c1.metric("Price", f"${hist['Close'].iloc[-1]:.2f}")
-    c2.metric("52-week high", f"${hist['Close'].tail(252).max():.2f}")
-    c3.metric("52-week low", f"${hist['Close'].tail(252).min():.2f}")
+    
