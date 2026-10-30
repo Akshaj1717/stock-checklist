@@ -1,6 +1,12 @@
 import yfinance as yf
 from checks import near_52_week_high, positive_1y_return, above_200_day_average
 
+TESTS = {
+    "Near 52-week high": near_52_week_high,
+    "Positive 1-year return": positive_1y_return,
+    "Above 200-day average": above_200_day_average,
+}
+
 symbols = ["VOO", "QQQ", "AAPL"]
 icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
 for s in symbols:
@@ -13,8 +19,3 @@ for s in symbols:
         status, detail = test(info, hist)
         print(f"{icons[status]} {name}: {detail}")
 
-TESTS = {
-    "Near 52-week high": near_52_week_high,
-    "Positive 1-year return": positive_1y_return,
-    "Above 200-day average": above_200_day_average,
-}
