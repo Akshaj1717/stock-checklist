@@ -14,8 +14,12 @@ for s in symbols:
     info = ticker.info
     hist = ticker.history(period="1y")
 
+    
     print(f"\n{s}")
     for name, test in TESTS.items():
         status, detail = test(info, hist)
         print(f"{icons[status]} {name}: {detail}")
+
+
+
 

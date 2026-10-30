@@ -1,6 +1,6 @@
 import streamlit as st
 import yfinance as yf
-from checks import TESTS
+from main import TESTS
 
 st.set_page_config(page_title="Stock Checklist", page_icon="📊")
 st.title("📊 Stock & ETF Checklist")
@@ -26,6 +26,19 @@ if symbol:
     st.line_chart(hist["Close"])
 
     icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
+    results = []
     for name, test in TESTS.items():
         status, detail = test(info, hist)
-        st.write(f"{icons[status]} **{name}**: {detail}")
+        results.append((name, status, detail))
+
+    
+scored = [status for name, status, detail in results if status != "n/a"]
+passed = scored.count("pass")
+
+st.subheader(f"Checklist: {passed}/{len(scored)} passed")
+if scored:
+    st.progress(passed / len(scored))
+
+icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
+for name, status, detail in results:
+    st.write(f"{icons[status]} **{name}**: {detail}")
