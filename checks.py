@@ -1,3 +1,4 @@
+
 def near_52_week_high(info, hist):
     """Pass if price is in the top 25% of its 52-week range."""
     if hist is None or len(hist) < 200:

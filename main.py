@@ -1,5 +1,5 @@
 import yfinance as yf
-from checks import near_52_week_high, positive_1y_return, above_200_day_average
+from checks import near_52_week_high, positive_1y_return, above_200_day_average, TESTS
 
 TESTS = {
     "Near 52-week high": near_52_week_high,
