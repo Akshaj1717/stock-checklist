@@ -1,28 +1,38 @@
-import yfinance as yf
-
-symbol = "AAPL"
-hist = yf.Ticker(symbol).history(period="10y")
-close = hist["Close"]
-
-daily_return = close.pct_change() # how much price moved each day
-
-ma_200 = close.rolling(200).mean() # 200 day moving average 
-signal = close > ma_200 # if price is above 200 day moving average, signal is True
-
-position = signal.shift(1).fillna(False) # shift signal by 1 day to avoid lookahead bias
-
-strategy_return = daily_return.where(position, 0) # if position is True, use daily return, else 0
-
-buy_hold = (1 + daily_return.fillna(0)).cumprod() # cumulative return of buy and hold strategy
-buy_hold_drawdown = (buy_hold / buy_hold.cummax() - 1).min()
-strategy = (1 + strategy_return.fillna(0)).cumprod() # cumulative return of 200-day moving average strategy
-strategy_drawdown = (strategy / strategy.cummax() - 1).min()
+import pandas as pd
 
 
+def max_drawdown(curve):
+    """Worst drop from a previous peak, e.g. -0.34 for -34%."""
+    return (curve / curve.cummax() - 1).min()
 
-print(f"{symbol}, last 10 years, $10,000 invested:")
-print(f"  Buy and hold:      ${buy_hold.iloc[-1] * 10_000:,.0f}")
-print(f"  Buy and hold drawdown:     {buy_hold_drawdown:.2%}")
-print(f"  200-day strategy:  ${strategy.iloc[-1] * 10_000:,.0f}")
-print(f"  200-day strategy drawdown:     {strategy_drawdown:.2%}")
-print(f"  Days invested:     {position.mean():.0%}")
+
+def run_200dma_backtest(close, starting=10_000):
+    """Compare holding vs. only holding while above the 200-day average.
+    Takes a Series of closing prices, returns (curves, stats)."""
+    daily_return = close.pct_change().fillna(0)
+
+    signal = close > close.rolling(200).mean()
+    position = signal.shift(1, fill_value=False)
+
+    strategy_return = daily_return.where(position, 0)
+
+    curves = pd.DataFrame({
+        "Buy & hold": (1 + daily_return).cumprod() * starting,
+        "200-day rule": (1 + strategy_return).cumprod() * starting,
+    })
+
+    stats = pd.DataFrame({
+        "Final value": curves.iloc[-1],
+        "Total return": curves.iloc[-1] / starting - 1,
+        "Max drawdown": curves.apply(max_drawdown),
+    })
+    stats.loc["200-day rule", "Days invested"] = position.mean()
+
+    return curves, stats
+
+
+if __name__ == "__main__":
+    import yfinance as yf
+    close = yf.Ticker("VOO").history(period="10y")["Close"]
+    curves, stats = run_200dma_backtest(close)
+    print(stats)
