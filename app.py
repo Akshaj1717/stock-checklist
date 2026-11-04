@@ -81,6 +81,8 @@ if symbol:
         else:
             st.info(f"The 200-day rule ended with **\\${-value_gap:,.0f} more** "
                     f"and a worst drop {dd_gap:.1f} points smaller than buy & hold.")
+        years = (curves.index[-1] - curves.index[0]).days / 365.25
+        st.caption(f"Period: {curves.index[0]:%b %Y} – {curves.index[-1]:%b %Y} ({years:.1f} years)")
 
 
     

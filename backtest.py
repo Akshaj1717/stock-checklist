@@ -1,3 +1,5 @@
+from socket import close
+
 import pandas as pd
 
 
@@ -13,8 +15,16 @@ def run_200dma_backtest(close, starting=10_000):
 
     signal = close > close.rolling(200).mean()
     position = signal.shift(1, fill_value=False)
-
     strategy_return = daily_return.where(position, 0)
+
+    ma_200 = close.rolling(200).mean()
+    signal = close > ma_200
+    position = signal.shift(1, fill_value=False)
+
+    # Start both strategies once the 200-day average exists
+    start = ma_200.first_valid_index()
+    daily_return = daily_return.loc[start:]
+    position = position.loc[start:]
 
     curves = pd.DataFrame({
         "Buy & hold": (1 + daily_return).cumprod() * starting,
@@ -27,6 +37,7 @@ def run_200dma_backtest(close, starting=10_000):
         "Max drawdown": curves.apply(max_drawdown),
     })
     stats.loc["200-day rule", "Days invested"] = position.mean()
+    stats.loc["Buy & hold", "Days invested"] = 1.0
 
     return curves, stats
 
