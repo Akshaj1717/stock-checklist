@@ -68,7 +68,19 @@ if symbol:
             "Max drawdown": "{:.1%}",
             "Days invested": "{:.0%}",
         }, na_rep="—"))
-        st.write(f"Buy & hold ended with \\${stats.loc['Buy & hold', 'Final value']:.0f}, while the 200DMA strategy ended with \\${stats.loc['200-day rule', 'Final value']:.0f}.")
+
+        bh = stats.loc["Buy & hold"]
+        rule = stats.loc["200-day rule"]
+        value_gap = bh["Final value"] - rule["Final value"]
+        dd_gap = (rule["Max drawdown"] - bh["Max drawdown"]) * 100  # in points
+
+        if value_gap > 0:
+            st.info(f"Buy & hold ended with **\\${value_gap:,.0f} more**. "
+                    f"The 200-day rule's worst drop was **{dd_gap:.1f} points smaller**. "
+                    f"The rule traded returns for a smoother ride.")
+        else:
+            st.info(f"The 200-day rule ended with **\\${-value_gap:,.0f} more** "
+                    f"and a worst drop {dd_gap:.1f} points smaller than buy & hold.")
 
 
     
