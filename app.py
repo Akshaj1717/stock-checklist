@@ -1,6 +1,6 @@
 import streamlit as st
 import yfinance as yf
-from checks import TESTS
+from main import TESTS
 from backtest import run_200dma_backtest
 
 st.set_page_config(page_title="Stock Checklist", page_icon="📊")
