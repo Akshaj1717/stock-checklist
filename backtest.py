@@ -1,5 +1,3 @@
-from socket import close
-
 import pandas as pd
 
 
@@ -13,10 +11,6 @@ def run_200dma_backtest(close, starting=10_000):
     Takes a Series of closing prices, returns (curves, stats)."""
     daily_return = close.pct_change().fillna(0)
 
-    signal = close > close.rolling(200).mean()
-    position = signal.shift(1, fill_value=False)
-    strategy_return = daily_return.where(position, 0)
-
     ma_200 = close.rolling(200).mean()
     signal = close > ma_200
     position = signal.shift(1, fill_value=False)
@@ -25,6 +19,8 @@ def run_200dma_backtest(close, starting=10_000):
     start = ma_200.first_valid_index()
     daily_return = daily_return.loc[start:]
     position = position.loc[start:]
+
+    strategy_return = daily_return.where(position, 0)
 
     curves = pd.DataFrame({
         "Buy & hold": (1 + daily_return).cumprod() * starting,

@@ -1,6 +1,6 @@
 import streamlit as st
 import yfinance as yf
-from main import TESTS
+from checks import TESTS
 from backtest import run_200dma_backtest
 
 st.set_page_config(page_title="Stock Checklist", page_icon="📊")
@@ -30,12 +30,6 @@ if symbol:
         st.subheader(info.get("longName", symbol))
         st.line_chart(hist["Close"])
 
-        icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
-        results = []
-        for name, test in TESTS.items():
-            status, detail = test(info, hist)
-            results.append((name, status, detail))
-
         scored = [status for name, status, detail in results if status != "n/a"]
         passed = scored.count("pass")
 
@@ -48,6 +42,11 @@ if symbol:
             st.progress(passed / len(scored))
 
         icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
+        results = []
+        for name, test in TESTS.items():
+            status, detail = test(info, hist)
+            results.append((name, status, detail))
+
         for name, status, detail in results:
             st.write(f"{icons[status]} **{name}**: {detail.replace('$', '\\$')}")  
 
@@ -73,6 +72,8 @@ if symbol:
         rule = stats.loc["200-day rule"]
         value_gap = bh["Final value"] - rule["Final value"]
         dd_gap = (rule["Max drawdown"] - bh["Max drawdown"]) * 100  # in points
+        years = (curves.index[-1] - curves.index[0]).days / 365.25
+        st.caption(f"Period: {curves.index[0]:%b %Y} – {curves.index[-1]:%b %Y} ({years:.1f} years)")
 
         if value_gap > 0:
             st.info(f"Buy & hold ended with **\\${value_gap:,.0f} more**. "
@@ -81,8 +82,6 @@ if symbol:
         else:
             st.info(f"The 200-day rule ended with **\\${-value_gap:,.0f} more** "
                     f"and a worst drop {dd_gap:.1f} points smaller than buy & hold.")
-        years = (curves.index[-1] - curves.index[0]).days / 365.25
-        st.caption(f"Period: {curves.index[0]:%b %Y} – {curves.index[-1]:%b %Y} ({years:.1f} years)")
 
 
     
