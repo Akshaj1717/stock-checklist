@@ -37,6 +37,20 @@ def run_200dma_backtest(close, starting=10_000):
 
     return curves, stats
 
+def compare_to_benchmark(close, bench_close, starting=10_000):
+    # Buy & hold this ticker vs. buy & hold the benchmark, over shared dates.
+    prices = pd.concat({"This ticker": close, "Benchmark": bench_close}, axis=1).dropna()
+
+    returns = prices.pct_change().fillna(0)
+    cruves = (1 + returns).cumprod() * starting
+
+    stats = pd.DataFrame({
+        "Final value": curves.iloc[-1],
+        "Total return": curves.iloc[-1] / starting - 1,
+        "Max drawdown": curves.apply(max_drawdown),
+    })
+    return curves, stats
+
 
 if __name__ == "__main__":
     import yfinance as yf

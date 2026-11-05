@@ -1,7 +1,7 @@
 import streamlit as st
 import yfinance as yf
 from checks import TESTS
-from backtest import run_200dma_backtest
+from backtest import run_200dma_backtest, compare_to_benchmark
 
 st.set_page_config(page_title="Stock Checklist", page_icon="📊")
 st.title("📊 Stock & ETF Checklist")
@@ -82,6 +82,27 @@ if symbol:
         else:
             st.info(f"The 200-day rule ended with **\\${-value_gap:,.0f} more** "
                     f"and a worst drop {dd_gap:.1f} points smaller than buy & hold.")
+        
+        st.divider()
+        st.subheader("vs. just buying VOO")
 
+        voo_close = load_long_history("VOO")
+        cmp_curves, cmp_stats = compare_to_benchmark(close_10y, voo_close)
+        cmp_curves = cmp_curves.rename(columns={"This ticker": symbol, "Benchmark": "VOO"})
+        cmp_stats = cmp_stats.rename(index={"This ticker": symbol, "Benchmark": "VOO"})
+
+        st.line_chart(cmp_curves)
+        st.dataframe(cmp_stats.style.format({
+            "Final value": "${:,.0f}",
+            "Total return": "{:.1%}",
+            "Max drawdown": "{:.1%}",
+        }))
+
+        if cmp_stats.loc[symbol, "Final value"] > cmp_stats.loc["VOO", "Final value"]:
+            st.info(f"{symbol} outperformed VOO by **\\${cmp_stats.loc[symbol, 'Final value'] - cmp_stats.loc['VOO', 'Final value']:,.0f}** over the period.")
+        elif cmp_stats.loc[symbol] == cmp_stats.loc["VOO"]:
+            st.info(f"{symbol} This is the benchmark.")
+        else:
+            st.info(f"{symbol} underperformed VOO by **\\${cmp_stats.loc['VOO', 'Final value'] - cmp_stats.loc[symbol, 'Final value']:,.0f}** over the period.")
 
     
