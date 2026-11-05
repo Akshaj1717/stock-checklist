@@ -90,6 +90,8 @@ if symbol:
         cmp_curves, cmp_stats = compare_to_benchmark(close_10y, voo_close)
         cmp_curves = cmp_curves.rename(columns={"This ticker": symbol, "Benchmark": "VOO"})
         cmp_stats = cmp_stats.rename(index={"This ticker": symbol, "Benchmark": "VOO"})
+        dd_diff = (cmp_stats.loc[symbol, "Max drawdown"] - cmp_stats.loc["VOO", "Max drawdown"]) * 100
+        st.info(f"{symbol} had a worst drop {dd_diff:.1f} points {'smaller' if dd_diff < 0 else 'larger'} than VOO over the period.")
 
         st.line_chart(cmp_curves)
         st.dataframe(cmp_stats.style.format({
@@ -98,6 +100,7 @@ if symbol:
             "Max drawdown": "{:.1%}",
         }))
 
+        st.caption(f"Period: {cmp_curves.index[0]:%b %Y} – {cmp_curves.index[-1]:%b %Y} ({years:.1f} years)")
         if cmp_stats.loc[symbol, "Final value"] > cmp_stats.loc["VOO", "Final value"]:
             st.info(f"{symbol} outperformed VOO by **\\${cmp_stats.loc[symbol, 'Final value'] - cmp_stats.loc['VOO', 'Final value']:,.0f}** over the period.")
         elif cmp_stats.loc[symbol, "Final value"] == cmp_stats.loc["VOO", "Final value"]:
