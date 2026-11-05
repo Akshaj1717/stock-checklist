@@ -100,7 +100,7 @@ if symbol:
 
         if cmp_stats.loc[symbol, "Final value"] > cmp_stats.loc["VOO", "Final value"]:
             st.info(f"{symbol} outperformed VOO by **\\${cmp_stats.loc[symbol, 'Final value'] - cmp_stats.loc['VOO', 'Final value']:,.0f}** over the period.")
-        elif cmp_stats.loc[symbol] == cmp_stats.loc["VOO"]:
+        elif cmp_stats.loc[symbol, "Final value"] == cmp_stats.loc["VOO", "Final value"]:
             st.info(f"{symbol} This is the benchmark.")
         else:
             st.info(f"{symbol} underperformed VOO by **\\${cmp_stats.loc['VOO', 'Final value'] - cmp_stats.loc[symbol, 'Final value']:,.0f}** over the period.")
