@@ -42,7 +42,7 @@ def compare_to_benchmark(close, bench_close, starting=10_000):
     prices = pd.concat({"This ticker": close, "Benchmark": bench_close}, axis=1).dropna()
 
     returns = prices.pct_change().fillna(0)
-    cruves = (1 + returns).cumprod() * starting
+    curves = (1 + returns).cumprod() * starting
 
     stats = pd.DataFrame({
         "Final value": curves.iloc[-1],
