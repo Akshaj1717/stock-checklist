@@ -1,10 +1,3 @@
-TESTS = {
-    "Near 52-week high": near_52_week_high,
-    "Positive 1-year return": positive_1y_return,
-    "Above 200-day average": above_200_day_average,
-}
-
-
 def near_52_week_high(info, hist):
     """Pass if price is in the top 25% of its 52-week range."""
     if hist is None or len(hist) < 200:
@@ -36,3 +29,9 @@ def above_200_day_average(info, hist):
     price = hist["Close"].iloc[-1]
     status = "pass" if price > avg_200 else "fail"
     return status, f"Price (${price:.2f}) is {'above' if status == 'pass' else 'below'} the 200-day average (${avg_200:.2f})"
+
+TESTS = {
+    "Near 52-week high": near_52_week_high,
+    "Positive 1-year return": positive_1y_return,
+    "Above 200-day average": above_200_day_average,
+}
