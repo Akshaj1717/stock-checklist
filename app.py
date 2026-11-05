@@ -30,6 +30,15 @@ if symbol:
         st.subheader(info.get("longName", symbol))
         st.line_chart(hist["Close"])
 
+        icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
+        results = []
+        for name, test in TESTS.items():
+            status, detail = test(info, hist)
+            results.append((name, status, detail))
+
+        for name, status, detail in results:
+            st.write(f"{icons[status]} **{name}**: {detail.replace('$', '\\$')}")  
+
         scored = [status for name, status, detail in results if status != "n/a"]
         passed = scored.count("pass")
 
@@ -40,15 +49,6 @@ if symbol:
         c3.metric("52-week low", f"${hist['Close'].tail(252).min():.2f}")
         if scored:
             st.progress(passed / len(scored))
-
-        icons = {"pass": "✅", "fail": "❌", "n/a": "➖"}
-        results = []
-        for name, test in TESTS.items():
-            status, detail = test(info, hist)
-            results.append((name, status, detail))
-
-        for name, status, detail in results:
-            st.write(f"{icons[status]} **{name}**: {detail.replace('$', '\\$')}")  
 
     with tab2:
         st.write("**Rule:** only own it while the price is above its 200-day average; otherwise hold cash.")
