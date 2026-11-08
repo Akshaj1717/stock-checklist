@@ -4,8 +4,6 @@
 
 Most beginner investors buy on hype and sell in a panic. This tool helps you invest with evidence instead. Enter any stock or ETF to run it through a checklist of investing rules, backtest a trading rule against buy and hold, and see whether you would have been better off just buying the S&P 500.
 
-![screenshot](screenshot.png)
-
 ## Features
 
 **Checklist tab**
