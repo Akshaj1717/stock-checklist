@@ -51,6 +51,18 @@ def compare_to_benchmark(close, bench_close, starting=10_000):
     })
     return curves, stats
 
+def annualized_returns(close, periods=(1, 3, 5, 10)):
+    """Average yearly return over the last N years, none if not enough data."""
+    end_date, end_price = close.index[-1], close.iloc[-1]
+    out = {}
+    for years in periods:
+        cutoff = end_date - pd.DateOffset(years=years)
+        if close.index[0] > cutoff: # ticker doesn't have enough history
+            out[f"{years}Y"] = None
+            continue
+        start_price = close.loc[cutoff:].iloc[0] # first trade on or after cutoff
+        out[f"{years}Y"] = (end_price / start_price) ** (1 / years) - 1
+    return pd.Series(out, dtype="float64")
 
 if __name__ == "__main__":
     import yfinance as yf
