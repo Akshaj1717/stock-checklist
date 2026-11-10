@@ -29,10 +29,6 @@ def load(symbol):
     t = yf.Ticker(symbol)
     return t.info, t.history(period="1y")
 
-@st.cache_data(ttl=3600)
-def load_long_history(symbol):
-    return yf.Ticker(symbol).history(period="10y")["Close"]
-
 col_t, col_b = st.columns([1, 2])
 symbol = col_t.text_input("Ticker", placeholder="e.g. AAPL").strip().upper()
 bench = col_b.selectbox(
@@ -142,6 +138,7 @@ if symbol:
             cmp_curves = cmp_curves.rename(columns={"This ticker": symbol, "Benchmark": bench})
             cmp_stats = cmp_stats.rename(index={"This ticker": symbol, "Benchmark": bench})
             cmp_years = (cmp_curves.index[-1] - cmp_curves.index[0]).days / 365.25
+            dd_diff = (cmp_stats.loc[symbol, "Max drawdown"] - cmp_stats.loc[bench, "Max drawdown"]) * 100
             dd_word = "deeper" if dd_diff < 0 else "shallower"
             st.info(f"{symbol}'s worst drop was {abs(dd_diff):.1f} points {dd_word} than {bench}'s.")
 
@@ -155,8 +152,6 @@ if symbol:
             st.caption(f"Period: {cmp_curves.index[0]:%b %Y} – {cmp_curves.index[-1]:%b %Y} ({cmp_years:.1f} years)")
             if cmp_stats.loc[symbol, "Final value"] > cmp_stats.loc[bench, "Final value"]:
                 st.info(f"{symbol} outperformed {bench} by **\\${cmp_stats.loc[symbol, 'Final value'] - cmp_stats.loc[bench, 'Final value']:,.0f}** over the period.")
-            elif cmp_stats.loc[symbol, "Final value"] == cmp_stats.loc[bench, "Final value"]:
-                st.info(f"{symbol} This is the benchmark.")
             else:
                 st.info(f"{symbol} underperformed {bench} by **\\${cmp_stats.loc[bench, 'Final value'] - cmp_stats.loc[symbol, 'Final value']:,.0f}** over the period.")
 
