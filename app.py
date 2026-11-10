@@ -43,13 +43,12 @@ bench = col_b.selectbox(
 
 if symbol:
     info, hist = load(symbol)
+    if hist.empty:
+        st.error(f"No data found for {symbol}. Check the symbol.")
+        st.stop()
 
     tab1, tab2, tab3 = st.tabs(["Checklist", "Returns", "Backtest"])
     with tab1:
-        if hist.empty:
-            st.error(f"No data found for {symbol}. Check the symbol.")
-            st.stop()
-
         st.subheader(info.get("longName", symbol))
         st.line_chart(hist["Close"])
 
@@ -85,14 +84,19 @@ if symbol:
             bench: annualized_returns(bench_full),
         })
         table["Difference"] = table[symbol] - table[bench]
-        table.style.map(lambda v: "color: green" if v > 0 else "color: red" if v < 0 else "", subset=["Difference"])
+        st.dataframe(
+            table.style
+                .format("{:+.1%}", na_rep="—")
+                .map(lambda v: "color: green" if v > 0 else "color: red" if v < 0 else "",
+                    subset=["Difference"]))
 
-        st.subheader("Average yearly returns")
-        st.dataframe(table.style.format("{:.1%}", na_rep="—"))
-        st.caption("Annualized: the steady yearly return that would produce the same "
-                   "total growth. Includes dividends.")
-        if (table["Difference"] > 0).sum():
-            st.info(f"{symbol} outperformed {bench} over the last 1, 3, 5, and/or 10 years.")
+        valid = table["Difference"].notna()
+        wins = (table["Difference"][valid] > 0).sum()
+        total = valid.sum()
+        if symbol != bench and total:
+            verb = "beat" if wins > total / 2 else "trailed"
+            st.info(f"{symbol} {verb} {bench} in {wins if verb == 'beat' else total - wins} "
+                    f"of {total} periods shown.")
 
     with tab3:
         st.write("**Rule:** only own it while the price is above its 200-day average; otherwise hold cash.")
@@ -128,28 +132,32 @@ if symbol:
                     f"and a worst drop {dd_gap:.1f} points smaller than buy & hold.")
         
         st.divider()
-        st.subheader("vs. just buying benchmark")
+        st.subheader(f"vs. just buying {bench}")
 
-        bench = load_long_history(bench)
-        cmp_curves, cmp_stats = compare_to_benchmark(close_10y, bench)
-        cmp_curves = cmp_curves.rename(columns={"This ticker": symbol, "Benchmark": bench})
-        cmp_stats = cmp_stats.rename(index={"This ticker": symbol, "Benchmark": bench})
-        dd_diff = (cmp_stats.loc[symbol, "Max drawdown"] - cmp_stats.loc[bench, "Max drawdown"]) * 100
-        st.info(f"{symbol} had a worst drop {dd_diff:.1f} points {'smaller' if dd_diff < 0 else 'larger'} than {bench} over the period.")
-
-        st.line_chart(cmp_curves)
-        st.dataframe(cmp_stats.style.format({
-            "Final value": "${:,.0f}",
-            "Total return": "{:.1%}",
-            "Max drawdown": "{:.1%}",
-        }))
-
-        st.caption(f"Period: {cmp_curves.index[0]:%b %Y} – {cmp_curves.index[-1]:%b %Y} ({years:.1f} years)")
-        if cmp_stats.loc[symbol, "Final value"] > cmp_stats.loc[bench, "Final value"]:
-            st.info(f"{symbol} outperformed {bench} by **\\${cmp_stats.loc[symbol, 'Final value'] - cmp_stats.loc[bench, 'Final value']:,.0f}** over the period.")
-        elif cmp_stats.loc[symbol, "Final value"] == cmp_stats.loc[bench, "Final value"]:
-            st.info(f"{symbol} This is the benchmark.")
+        if symbol == bench:
+            st.caption("This is the benchmark, so the comparison is trivial.")
         else:
-            st.info(f"{symbol} underperformed {bench} by **\\${cmp_stats.loc[bench, 'Final value'] - cmp_stats.loc[symbol, 'Final value']:,.0f}** over the period.")
+            bench_close = last_n_years(load_full_history(bench), 10)
+            cmp_curves, cmp_stats = compare_to_benchmark(close_10y, bench_close)
+            cmp_curves = cmp_curves.rename(columns={"This ticker": symbol, "Benchmark": bench})
+            cmp_stats = cmp_stats.rename(index={"This ticker": symbol, "Benchmark": bench})
+            cmp_years = (cmp_curves.index[-1] - cmp_curves.index[0]).days / 365.25
+            dd_word = "deeper" if dd_diff < 0 else "shallower"
+            st.info(f"{symbol}'s worst drop was {abs(dd_diff):.1f} points {dd_word} than {bench}'s.")
+
+            st.line_chart(cmp_curves)
+            st.dataframe(cmp_stats.style.format({
+                "Final value": "${:,.0f}",
+                "Total return": "{:.1%}",
+                "Max drawdown": "{:.1%}",
+            }))
+
+            st.caption(f"Period: {cmp_curves.index[0]:%b %Y} – {cmp_curves.index[-1]:%b %Y} ({cmp_years:.1f} years)")
+            if cmp_stats.loc[symbol, "Final value"] > cmp_stats.loc[bench, "Final value"]:
+                st.info(f"{symbol} outperformed {bench} by **\\${cmp_stats.loc[symbol, 'Final value'] - cmp_stats.loc[bench, 'Final value']:,.0f}** over the period.")
+            elif cmp_stats.loc[symbol, "Final value"] == cmp_stats.loc[bench, "Final value"]:
+                st.info(f"{symbol} This is the benchmark.")
+            else:
+                st.info(f"{symbol} underperformed {bench} by **\\${cmp_stats.loc[bench, 'Final value'] - cmp_stats.loc[symbol, 'Final value']:,.0f}** over the period.")
 
     
