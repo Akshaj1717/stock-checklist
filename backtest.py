@@ -64,6 +64,21 @@ def annualized_returns(close, periods=(1, 3, 5, 10)):
         out[f"{years}Y"] = (end_price / start_price) ** (1 / years) - 1
     return pd.Series(out, dtype="float64")
 
+def historical_outcomes(close, initial=2000, monthly=0, years=5):
+    """For every past starting month, what the plan would have grown to.
+    Returns a Series: index = start month, value = ending balance."""
+    prices = close.resample("ME").last().dropna()
+    n = years * 12
+
+    start_price = prices
+    end_price = prices.shift(-n)
+
+    # sum of 1/price over the n months of contribution, aligned to the start month
+    inv_sum = (1 / prices).rolling(n).sum().shift(-n + 1)
+
+    final = end_price * (initial / start_price + monthly * inv_sum)
+    return final.dropna()
+
 if __name__ == "__main__":
     import yfinance as yf
     close = yf.Ticker("VOO").history(period="10y")["Close"]

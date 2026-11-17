@@ -1,7 +1,7 @@
 import streamlit as st
 import yfinance as yf
 from checks import TESTS
-from backtest import annualized_returns, run_200dma_backtest, compare_to_benchmark
+from backtest import annualized_returns, run_200dma_backtest, compare_to_benchmark, historical_outcomes
 import pandas as pd
 
 BENCHMARKS = {
@@ -93,6 +93,60 @@ if symbol:
             verb = "beat" if wins > total / 2 else "trailed"
             st.info(f"{symbol} {verb} {bench} in {wins if verb == 'beat' else total - wins} "
                     f"of {total} periods shown.")
+
+        st.divider()
+        st.subheader("What could your money become?")
+        st.caption("Not a prediction. We replay your plan from every past starting month "
+                   "and show what actually happened.")
+
+        c1, c2, c3 = st.columns(3)
+        initial = c1.number_input("Starting amount ($)", min_value=0, value=2000, step=500)
+        monthly = c2.number_input("Add each month ($)", min_value=0, value=0, step=50)
+        years = c3.slider("Years", min_value=1, max_value=20, value=5)
+
+        outcomes = historical_outcomes(full, initial, monthly, years)
+        invested = initial + monthly * years * 12
+
+        if len(outcomes) < 12:
+            st.warning(f"{symbol} doesn't have enough history for {years}-year periods. "
+                       f"Try fewer years.")
+        else:
+            worst, typical, best = outcomes.min(), outcomes.median(), outcomes.max()
+            lost_pct = (outcomes < invested).mean()
+
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("You put in", f"${invested:,.0f}")
+            m2.metric("Worst", f"${worst:,.0f}")
+            m3.metric("Typical", f"${typical:,.0f}")
+            m4.metric("Best", f"${best:,.0f}")
+
+            st.line_chart(outcomes.rename("Ending balance"))
+            st.caption(f"Each point is one starting month: where you'd have ended up "
+                       f"after {years} years. Based on {len(outcomes)} starting months "
+                       f"from {outcomes.index[0]:%b %Y} to {outcomes.index[-1]:%b %Y}.")
+
+            st.info(f"In {lost_pct:.0%} of past {years}-year periods, this plan ended "
+                    f"with less than you put in.")
+
+        if symbol == bench:
+            st.caption("This is the benchmark, so the comparison is trivial.")
+        else:
+            bench_outcomes = historical_outcomes(bench_full, initial, monthly, years)
+            if len(bench_outcomes) < 12:
+                st.warning(f"{bench} doesn't have enough history for {years}-year periods. "
+                           f"Try fewer years.")
+            else:
+                cmp = pd.DataFrame({
+                    symbol: outcomes,
+                    bench: bench_outcomes,
+                })
+                cmp["Difference"] = cmp[symbol] - cmp[bench]
+                st.line_chart(cmp)
+
+                better = (cmp["Difference"] > 0).mean()
+                st.info(f"{symbol} outperformed {bench} in {better:.0%} of past {years}-year periods.")
+
+
 
     with tab3:
         st.write("**Rule:** only own it while the price is above its 200-day average; otherwise hold cash.")
