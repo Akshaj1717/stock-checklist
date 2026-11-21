@@ -120,9 +120,19 @@ if symbol:
             m3.metric("Typical", f"${typical:,.0f}")
             m4.metric("Best", f"${best:,.0f}")
 
-            st.line_chart(outcomes.rename("Ending balance"))
+            import altair as alt
+
+            df = outcomes.rename("Ending balance").reset_index()
+            df.columns = ["Start month", "Ending balance"]
+            chart = alt.Chart(df).mark_line().encode(
+                x=alt.X("Start month:T", axis=alt.Axis(format="%Y")),
+                y=alt.Y("Ending balance:Q", axis=alt.Axis(format="$,.0f")),
+                tooltip=[alt.Tooltip("Start month:T", format="%b %Y"),
+                        alt.Tooltip("Ending balance:Q", format="$,.0f")],
+            )
+            st.altair_chart(chart, use_container_width=True)
             st.caption(f"Each point is one starting month: where you'd have ended up "
-                       f"after {years} years. Based on {len(outcomes)} starting months "
+                       f"after {years} year{'s' if years != 1 else ''}. Based on {len(outcomes)} starting months "
                        f"from {outcomes.index[0]:%b %Y} to {outcomes.index[-1]:%b %Y}.")
 
             st.info(f"In {lost_pct:.0%} of past {years}-year periods, this plan ended "
