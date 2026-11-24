@@ -44,7 +44,7 @@ bench = col_b.selectbox(
 )
 
 if symbol:
-    info, hist = load(symbol).dropna()
+    info, hist = load(symbol)
     if hist.empty:
         st.error(f"No data found for {symbol}. Check the symbol.")
         st.stop()
