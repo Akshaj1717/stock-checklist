@@ -1,8 +1,9 @@
 import streamlit as st
 import yfinance as yf
 from checks import TESTS
-from backtest import annualized_returns, run_200dma_backtest, compare_to_benchmark, historical_outcomes
+from backtest import annualized_returns, run_200dma_backtest, compare_to_benchmark, historical_outcomes, simulate_outcomes
 import pandas as pd
+import numpy as np
 
 BENCHMARKS = {
     "VOO": "S&P 500: the 500 biggest US companies",
@@ -28,6 +29,10 @@ def last_n_years(close, years):
 def load(symbol):
     t = yf.Ticker(symbol)
     return t.info, t.history(period="1y")
+
+@st.cache_data
+def cached_sims(symbol, initial, monthly, years):
+    return simulate_outcomes(load_full_history(symbol), initial, monthly, years)
 
 col_t, col_b = st.columns([1, 2])
 symbol = col_t.text_input("Ticker", placeholder="e.g. AAPL").strip().upper()
@@ -155,6 +160,39 @@ if symbol:
 
                 better = (cmp["Difference"] > 0).mean()
                 st.info(f"{symbol} outperformed {bench} in {better:.0%} of past {years}-year periods.")
+        
+        st.divider()
+        st.subheader("Simulated futures")
+        st.caption("We build 5,000 possible futures by stitching together random "
+                   "1-year chunks of this ticker's real past returns. That gives a wider "
+                   "range than the replay, but it still only reflects what this ticker has done before.")
+
+        sims = simulate_outcomes(full, initial, monthly, years)
+        
+
+        if len(sims) == 0:
+            st.warning(f"Not enough history for {symbol} to simulate.")
+        else:
+            bad, typical, good = np.percentile(sims, [10, 50, 90])
+            lose_pct = (sims < invested).mean()
+            st.info(f"Replaying real history: lost money in {lost_pct:.0%} of the time.")
+
+            s1, s2, s3, s4 = st.columns(4)
+            s1.metric("Bad case", f"${bad:,.0f}", help="Only 1 in 10 simulations did worse.")
+            s2.metric("Typical", f"${typical:,.0f}", help="Half did better, half did worse.")
+            s3.metric("Good case", f"${good:,.0f}", help="Only 1 in 10 simulations did better.")
+            s4.metric("Chance of losing money", f"{lose_pct:.0%}")
+
+            hist = pd.DataFrame({"Ending balance": sims})
+            chart = alt.Chart(hist).mark_bar().encode(
+                x=alt.X("Ending balance:Q", bin=alt.Bin(maxbins=40),
+                        axis=alt.Axis(format="$,.0f")),
+                y=alt.Y("count()", title="Simulations"),
+            )
+            invested_line = alt.Chart(pd.DataFrame({"x": [invested]})).mark_rule(
+                color="red", strokeDash=[4, 4]).encode(x="x:Q")
+            st.altair_chart(chart + invested_line, use_container_width=True)
+            st.caption("Red dashed line = what you put in. Bars left of it lost money.")
 
 
 
@@ -218,5 +256,7 @@ if symbol:
                 st.info(f"{symbol} outperformed {bench} by **\\${cmp_stats.loc[symbol, 'Final value'] - cmp_stats.loc[bench, 'Final value']:,.0f}** over the period.")
             else:
                 st.info(f"{symbol} underperformed {bench} by **\\${cmp_stats.loc[bench, 'Final value'] - cmp_stats.loc[symbol, 'Final value']:,.0f}** over the period.")
+
+        
 
     

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 def max_drawdown(curve):
@@ -78,6 +79,28 @@ def historical_outcomes(close, initial=2000, monthly=0, years=5):
 
     final = end_price * (initial / start_price + monthly * inv_sum)
     return final.dropna()
+
+def simulate_outcomes(close, initial=2000, monthly= 0, years=5,
+                      n_sims=5000, block=12, seed=42):
+     """Bootstrap: build n_sims possible futures by stitching together random
+    `block`-month chunks of real past monthly returns. Returns ending balances."""
+     prices = close.resample("ME").last().dropna()
+     r = prices.pct_change().dropna().to_numpy()
+     n = years * 12
+     if len(r) < block * 2:
+         return np.array([])  # not enough history to stitch together even two blocks
+
+     rng = np.random.default_rng(seed)
+     n_blocks = -(-n // block) # ceiling division
+     starts = rng.integers(0, len(r) - block + 1, size=(n_sims, n_blocks))
+     idx = (starts[:, :, None] + np.arange(block)).reshape(n_sims, -1)[:, :n]  # truncate to n months
+     R = r[idx]
+
+     growth = np.cumprod(1 + R, axis=1) # value of $1 invested at the start of each simulation
+     g_end = growth[:, -1] # final growth factor for each simulation
+     g_before = np.hstack([np.ones((n_sims, 1)), growth[:, :-1]]) # growth factor before each month
+     # each deposit at month k grows by g_end / g_before[k]
+     return g_end * (initial + monthly * (1 / g_before).sum(axis=1))
 
 if __name__ == "__main__":
     import yfinance as yf
