@@ -18,7 +18,6 @@ Most beginner investors buy on hype and sell in a panic. This tool helps you inv
 - **What could your money become?** Enter a starting amount, a monthly contribution, and a number of years:
   - **Replay:** your plan run from every past starting month, showing the worst, typical, and best result and how often you would have lost money
   - **Simulated futures:** 5,000 possible outcomes built from the ticker's real past returns, showing bad, typical, and good cases and the chance of losing money
-- **Long-history stand-ins:** young funds are extended back in time with an older fund that tracks the same index (for example, VOO with SPY back to 1993), so results include the dot-com crash and 2008
 
 **Backtest**
 - **200-day moving average rule** compared with buy and hold
@@ -36,9 +35,7 @@ $2,000 invested in VOO with no monthly contributions, replayed from every starti
 | 1 year | $1,637 | $2,319 | $3,129 | 10% of periods |
 | 10 years | $5,720 | $7,142 | $9,223 | 0% of periods |
 
-**A strong decade can make history look safer than it is.** VOO only exists from 2010 onward, one of the best stretches in US market history, so its replay found no losing 10-year periods. Simulating futures from the same history with the years reshuffled gave a small but real chance of loss. Adding SPY's history from 1993 brings in the 2000s "lost decade":
-
-> TODO: after deploying, add VOO 10-year results with long history: replay lost-money %, simulated lost-money %, worst case.
+**A strong decade can make history look safer than it is.** VOO only exists from 2010 onward, one of the best stretches in US market history, so its replay found no losing 10-year periods. Simulating futures from the same history with the years reshuffled gave a small but real chance of loss. Investors who bought the S&P 500 in 2000 had less money 10 years later, and that decade is not in VOO's data.
 
 **The 200-day rule rarely beats holding**
 
@@ -73,7 +70,6 @@ AAPL beat the index by about $95,000. INTC trailed it by about $21,750 and fell 
 - **Annualized returns (CAGR):** `(end / start) ** (1 / years) - 1`, so compounding is accounted for. Periods longer than a ticker's history show "—".
 - **Replay:** monthly prices. Each deposit buys shares at that month's price, and the ending value is total shares × ending price. All starting months are computed at once with rolling sums. Windows overlap, so 75 windows are not 75 independent results.
 - **Block bootstrap simulation:** 5,000 paths built from random 12-month chunks of real monthly returns. Whole years are used so that streaks, like crashes and recoveries, stay intact. The random seed is fixed so results are repeatable.
-- **Long-history stand-ins:** before a young fund's first day, the returns of an older fund that tracks the same index are used, rescaled so the two series join without a jump. Used only in the Returns tab, and always labeled. Stand-ins differ slightly in fees, for example SPY charges 0.09% a year and VOO 0.03%.
 - **Data cleaning:** blank prices from the data source are dropped as they are loaded.
 - **Assumptions:** prices are adjusted for dividends and splits. Cash earns 0%. There are no trading costs or taxes.
 
@@ -82,7 +78,7 @@ AAPL beat the index by about $95,000. INTC trailed it by about $21,750 and fell 
 ```
 app.py         Streamlit interface: inputs, tabs, charts, takeaways
 checks.py      Checklist tests; each is a function (info, hist) -> (status, detail), registered in TESTS
-backtest.py    Backtests, benchmark comparison, annualized returns, replay, simulation, history splicing
+backtest.py    Backtests, benchmark comparison, annualized returns, replay, simulation
 main.py        Command-line runner for the checklist
 ```
 
@@ -107,7 +103,6 @@ Each `git push` to `main` redeploys the live app on Streamlit Community Cloud.
 - [x] 1, 3, 5, and 10-year annualized returns
 - [x] Replay of every past starting month, with monthly contributions
 - [x] Block bootstrap simulation of possible outcomes
-- [x] Long-history stand-ins for young funds
 - [ ] Volatility in plain English, and a normal pullback level for each stock
 - [ ] Backtest of the pullback rule, with an adjustable threshold
 - [ ] Valuation card (P/E, P/S, sector context)
@@ -115,6 +110,7 @@ Each `git push` to `main` redeploys the live app on Streamlit Community Cloud.
 - [ ] Guess-first mode before comparisons
 - [ ] Portfolio view, paper portfolio, and investing journal
 - [ ] AI "explain this page"
+- [ ] Long-history stand-ins for young funds (e.g., SPY data back to 1993 for VOO)
 
 ## Disclaimer
 
