@@ -187,7 +187,7 @@ if symbol:
             sim_df = pd.DataFrame({"Ending balance": sims})
             chart = alt.Chart(sim_df).mark_bar().encode(
                 x=alt.X("Ending balance:Q", bin=alt.Bin(maxbins=40),
-                        axis=alt.Axis(format="$,.0f")),
+                    axis=alt.Axis(format="$,.0f"), title="Ending balance"),
                 y=alt.Y("count()", title="Simulations"),
             )
             invested_line = alt.Chart(pd.DataFrame({"x": [invested]})).mark_rule(
