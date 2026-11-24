@@ -1,3 +1,4 @@
+
 def near_52_week_high(info, hist):
     """Pass if price is in the top 25% of its 52-week range."""
     if hist is None or len(hist) < 200:
@@ -35,3 +36,4 @@ TESTS = {
     "Positive 1-year return": positive_1y_return,
     "Above 200-day average": above_200_day_average,
 }
+

@@ -4,6 +4,7 @@ from checks import TESTS
 from backtest import annualized_returns, run_200dma_backtest, compare_to_benchmark, historical_outcomes, simulate_outcomes
 import pandas as pd
 import numpy as np
+import altair as alt
 
 BENCHMARKS = {
     "VOO": "S&P 500: the 500 biggest US companies",
@@ -19,7 +20,7 @@ st.caption("An analysis tool, not financial advice.")
 
 @st.cache_data(ttl=3600)
 def load_full_history(symbol):
-    return yf.Ticker(symbol).history(period="max")["Close"]
+    return yf.Ticker(symbol).history(period="max")["Close"].dropna()
 
 
 def last_n_years(close, years):
@@ -43,7 +44,7 @@ bench = col_b.selectbox(
 )
 
 if symbol:
-    info, hist = load(symbol)
+    info, hist = load(symbol).dropna()
     if hist.empty:
         st.error(f"No data found for {symbol}. Check the symbol.")
         st.stop()
@@ -125,7 +126,6 @@ if symbol:
             m3.metric("Typical", f"${typical:,.0f}")
             m4.metric("Best", f"${best:,.0f}")
 
-            import altair as alt
 
             df = outcomes.rename("Ending balance").reset_index()
             df.columns = ["Start month", "Ending balance"]
@@ -156,7 +156,7 @@ if symbol:
                     bench: bench_outcomes,
                 })
                 cmp["Difference"] = cmp[symbol] - cmp[bench]
-                st.line_chart(cmp)
+                st.line_chart(cmp[[symbol, bench]])
 
                 better = (cmp["Difference"] > 0).mean()
                 st.info(f"{symbol} outperformed {bench} in {better:.0%} of past {years}-year periods.")
@@ -167,15 +167,16 @@ if symbol:
                    "1-year chunks of this ticker's real past returns. That gives a wider "
                    "range than the replay, but it still only reflects what this ticker has done before.")
 
-        sims = simulate_outcomes(full, initial, monthly, years)
-        
+        sims = cached_sims(symbol, initial, monthly, years)
 
         if len(sims) == 0:
             st.warning(f"Not enough history for {symbol} to simulate.")
         else:
             bad, typical, good = np.percentile(sims, [10, 50, 90])
             lose_pct = (sims < invested).mean()
-            st.info(f"Replaying real history: lost money in {lost_pct:.0%} of the time.")
+            if lost_pct is not None:
+                st.info(f"Replaying real history: lost money {lost_pct:.0%} of the time. "
+                f"Simulating: {lose_pct:.0%}.")
 
             s1, s2, s3, s4 = st.columns(4)
             s1.metric("Bad case", f"${bad:,.0f}", help="Only 1 in 10 simulations did worse.")
@@ -183,8 +184,8 @@ if symbol:
             s3.metric("Good case", f"${good:,.0f}", help="Only 1 in 10 simulations did better.")
             s4.metric("Chance of losing money", f"{lose_pct:.0%}")
 
-            hist = pd.DataFrame({"Ending balance": sims})
-            chart = alt.Chart(hist).mark_bar().encode(
+            sim_df = pd.DataFrame({"Ending balance": sims})
+            chart = alt.Chart(sim_df).mark_bar().encode(
                 x=alt.X("Ending balance:Q", bin=alt.Bin(maxbins=40),
                         axis=alt.Axis(format="$,.0f")),
                 y=alt.Y("count()", title="Simulations"),
@@ -218,8 +219,8 @@ if symbol:
         rule = stats.loc["200-day rule"]
         value_gap = bh["Final value"] - rule["Final value"]
         dd_gap = (rule["Max drawdown"] - bh["Max drawdown"]) * 100  # in points
-        years = (curves.index[-1] - curves.index[0]).days / 365.25
-        st.caption(f"Period: {curves.index[0]:%b %Y} – {curves.index[-1]:%b %Y} ({years:.1f} years)")
+        bt_years = (curves.index[-1] - curves.index[0]).days / 365.25
+        st.caption(f"Period: {curves.index[0]:%b %Y} – {curves.index[-1]:%b %Y} ({bt_years:.1f} years)")
 
         if value_gap > 0:
             st.info(f"Buy & hold ended with **\\${value_gap:,.0f} more**. "

@@ -54,6 +54,7 @@ def compare_to_benchmark(close, bench_close, starting=10_000):
 
 def annualized_returns(close, periods=(1, 3, 5, 10)):
     """Average yearly return over the last N years, none if not enough data."""
+    close = close.dropna()
     end_date, end_price = close.index[-1], close.iloc[-1]
     out = {}
     for years in periods:
